@@ -863,6 +863,17 @@ namespace Hogra::Volumetric {
 
 	glm::ivec3 VolumeObject::getVoxelCoords(const glm::vec3& wPos)
 	{
+		glm::vec3 w_min;
+		glm::vec3 w_max;
+		GetMinAndMax(w_min, w_max);
+		if (
+			wPos.x < w_min.x || wPos.x > w_max.x
+			|| wPos.y < w_min.y || wPos.y > w_max.y
+			|| wPos.z < w_min.z || wPos.z > w_max.z
+			) {
+			throw OutOfBoundException();
+		}
+
 		auto mPos = invModelMatrix * glm::vec4(wPos, 1.0f);	// world -> model
 		mPos /= mPos.w;													//homogene division
 		auto dim = voxels->GetDimensions();
