@@ -15,6 +15,7 @@
 #include "../Geometry.h"
 #include "../Mesh.h"
 #include "../AssetFolderPathManager.h"
+#include "../HograExceptions.h"
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -103,6 +104,8 @@ namespace Hogra::Volumetric {
 		}
 
 		void CreateBoundingBoxWireFrameGeometry();
+
+		void CreateVoxelPickerGeometry();
 
 		void ShowAll() {
 			SetSelectedFeatureGroup(ALL_FEATURES_STR);
@@ -343,11 +346,23 @@ namespace Hogra::Volumetric {
 		}
 
 		void SetIsPlaneGrabbed(bool b) {
-			isPlaneGrabbed = b;
+			isCropMode = b;
 		}
 
 		glm::vec4& GetTransferDrawColor() {
 			return transferDrawColor;
+		}
+
+		glm::ivec3 getVoxelCoords(const glm::vec3& wPos);
+
+		void pickVoxel(const glm::vec3& wPos);
+
+		void setVoxelPickMode(bool b) {
+			isVoxelPickMode = b;
+		}
+
+		void setVoxelPickerPosition(const glm::vec3& wPos) {
+			wVoxelPickerPos = wPos;
 		}
 
 	private:
@@ -398,10 +413,15 @@ namespace Hogra::Volumetric {
 
 		void DrawBoundingBox();
 
+		void DrawVoxelPicker();
+
 		BoundingBox originalBoundingBox;
 		BoundingBox boundingBox;			// Actually used box
 		Mesh boundingBoxMesh;				// To display bounding box
-		bool isPlaneGrabbed = false;
+		Mesh voxelPickerMesh;				// picker tool
+		glm::vec3 wVoxelPickerPos;
+		bool isCropMode = false;
+		bool isVoxelPickMode = false;
 
 		BoundingGeometry boundingGeometry;	// Optimised box grid
 		glm::vec3 w_position;

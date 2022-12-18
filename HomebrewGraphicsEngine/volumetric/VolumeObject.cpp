@@ -96,6 +96,7 @@ namespace Hogra::Volumetric {
 		LoadFeatures();
 		boundingGeometry.UpdateGeometry(BoundingGeometry::FullBox(), *voxels, transferFunction);
 		CreateBoundingBoxWireFrameGeometry();
+		CreateVoxelPickerGeometry();
 		ResetToDefault();
 	}
 
@@ -118,8 +119,11 @@ namespace Hogra::Volumetric {
 
 		//boundingGeometry.DrawOnScreen(outFBO, camera, modelMatrix, invModelMatrix, 0.1f);
 		
-		if (isPlaneGrabbed) {
+		if (isCropMode) {
 			DrawBoundingBox();
+		}
+		if (isVoxelPickMode) {
+			DrawVoxelPicker();
 		}
 
 		transferFunction.Draw(outFBO);
@@ -641,6 +645,15 @@ namespace Hogra::Volumetric {
 		boundingBoxMesh.Draw();
 	}
 
+	void VolumeObject::DrawVoxelPicker() {
+		voxelPickerMesh.Bind();
+		auto program = voxelPickerMesh.getMaterial()->GetShaderProgram();
+		auto mMatrix = glm::translate(wVoxelPickerPos);
+		program->SetUniform("sceneObject.modelMatrix", mMatrix);
+		voxelPickerMesh.Draw();
+
+	}
+
 	void VolumeObject::Serialize() {
 		std::ofstream stream(AssetFolderPathManager::getInstance()->getSavesFolderPath().append("/features.txt"));
 		if (stream.is_open()) {
@@ -719,6 +732,56 @@ namespace Hogra::Volumetric {
 		boundingBoxMesh.setDepthTest(false);
 	}
 
+	void VolumeObject::CreateVoxelPickerGeometry()
+	{
+		std::vector<Vertex> vertices;
+		std::vector<GLuint> indices;
+		Vertex v;
+		constexpr float l = 5.0f;
+		v.position = glm::vec3(0,0,0) * l;
+		vertices.push_back(v);
+		v.position = glm::vec3(-1, 0, 0) * l;
+		vertices.push_back(v);
+		v.position = glm::vec3(1, 0, 0) * l;
+		vertices.push_back(v);
+		v.position = glm::vec3(0, -1, 0) * l;
+		vertices.push_back(v);
+		v.position = glm::vec3(0, 1, 0) * l;
+		vertices.push_back(v);
+		v.position = glm::vec3(0, 0, -1) * l;
+		vertices.push_back(v);
+		v.position = glm::vec3(0, 0, 1) * l;
+		vertices.push_back(v);
+		
+		indices.push_back(1);
+		indices.push_back(0);
+		indices.push_back(0);
+		indices.push_back(2);
+
+		indices.push_back(3);
+		indices.push_back(0);
+		indices.push_back(0);
+		indices.push_back(4);
+
+		indices.push_back(5);
+		indices.push_back(0);
+		indices.push_back(0);
+		indices.push_back(6);
+
+		auto geometry = Allocator::New<Geometry>();
+		geometry->Init(vertices, indices);
+		geometry->SetFaceCulling(false);
+		geometry->SetPrimitiveType(GL_LINES);
+		auto program = Allocator::New<ShaderProgram>();
+		program->Init(AssetFolderPathManager::getInstance()->getShaderFolderPath().append("boundingBox.vert"),
+			"",
+			AssetFolderPathManager::getInstance()->getShaderFolderPath().append("boundingBox.frag"));
+		auto material = Allocator::New<Material>();
+		material->Init(program);
+		voxelPickerMesh.Init(material, geometry);
+		voxelPickerMesh.setDepthTest(false);
+	}
+
 	void VolumeObject::RemoveFeatureFromGroup(Feature* feature) {
 		if (nullptr != feature && nullptr != selectedFeatureGroup) {
 			if (auto iter = std::ranges::find(selectedFeatureGroup->features.begin(), selectedFeatureGroup->features.end(), feature);
@@ -749,6 +812,37 @@ namespace Hogra::Volumetric {
 		GUI::getInstance()->UpdateGUI(*this);
 	}
 
+
+	glm::ivec3 VolumeObject::getVoxelCoords(const glm::vec3& wPos)
+	{
+		auto mPos = invModelMatrix * glm::vec4(wPos, 1.0f);	// world -> model
+		mPos /= mPos.w;													//homogene division
+		auto dim = voxels->GetDimensions();
+		auto voxelPos = mPos + glm::vec4(dim.width, dim.height, dim.depth, 1.0f) * 0.5f;	// move origin into corner
+		if (
+			voxelPos.x < 0 || voxelPos.x > dim.width
+			|| voxelPos.y < 0 || voxelPos.y > dim.height
+			|| voxelPos.z < 0 || voxelPos.z > dim.depth
+		) {
+			throw OutOfBoundException();
+		}
+		return voxelPos;	// remove 4th coordinate
+	}
+
+	void VolumeObject::pickVoxel(const glm::vec3& wPos)
+	{
+		try {
+			auto voxelPos = getVoxelCoords(wPos);
+			auto gradientAndIntensity = voxels->ResampleGradientAndDensity(voxelPos);
+			float g = length(glm::vec3(gradientAndIntensity));
+			float i = gradientAndIntensity.w;
+			transferFunction.generalArea(glm::vec2(i, g) - glm::vec2(0.01f), glm::vec2(i, g) + glm::vec2(0.01f), transferDrawColor);
+			isChanged = true;
+		}
+		catch (OutOfBoundException _) {
+			// Do nothing
+		}
+	}
 
 	void VolumeObject::RayCasting(const Camera& camera, const Texture2D& depthTexture) {
 		bool isCameraMoved = camera.IsMoved();

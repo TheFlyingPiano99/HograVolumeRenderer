@@ -270,6 +270,7 @@
     <ClInclude Include="GlobalInclude.h" />
     <ClInclude Include="GUI.h" />
     <ClInclude Include="HoGraEngineApplication.h" />
+    <ClInclude Include="HograExceptions.h" />
     <ClInclude Include="HograTime.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />

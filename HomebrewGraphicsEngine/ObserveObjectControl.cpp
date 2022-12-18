@@ -9,7 +9,7 @@ void Hogra::ObserveObjectControl::Rotate(const glm::vec2& delta)
 	if (nullptr == camera) {
 		return;
 	}
-	if (isPlaneGrabbed) {
+	if (isCropMode) {
 		glm::vec3 w_d = (-camera->getRight() * delta.x + camera->getUp() * delta.y) / length(planePosition - camera->GetPosition());
 		float d = glm::dot(planeNormal, w_d);
 		DragPlane(d);
@@ -46,7 +46,7 @@ void Hogra::ObserveObjectControl::release()
 }
 
 void Hogra::ObserveObjectControl::grabPlane(float x, float y) {
-	if (isPlaneGrabbed) {
+	if (isCropMode) {
 		return;
 	}
 	glm::vec4 ndc = glm::vec4(x, y, 0, 1);
@@ -64,7 +64,7 @@ void Hogra::ObserveObjectControl::grabPlane(float x, float y) {
 		return;
 	}
 	if (collider == collidedWith) {
-		isPlaneGrabbed = true;
+		isCropMode = true;
 		planePosition = w_point;
 		planeNormal = w_normal;
 		std::cout << "N: " << planeNormal.x << ", " << planeNormal.y << ", " << planeNormal.z << std::endl;
@@ -72,8 +72,21 @@ void Hogra::ObserveObjectControl::grabPlane(float x, float y) {
 }
 
 void Hogra::ObserveObjectControl::releasePlane(float x, float y) {
-	isPlaneGrabbed = false;
+	isCropMode = false;
 
+}
+
+void Hogra::ObserveObjectControl::pickVoxel(float x, float y)
+{
+	glm::vec4 ndc = glm::vec4(x, y, 0, 1);
+	glm::vec4 wDir = camera->GetRayDirMatrix() * glm::vec4(x, y, 0.0, 1.0f);
+	wDir /= wDir.w;
+	glm::vec3 dir = glm::normalize(glm::vec3(wDir));
+	Ray ray;
+	ray.SetPosition(camera->GetPosition());
+	ray.setDirection(dir);
+
+	volumeObject->pickVoxel(ray.GetPosition() + ray.getDirection() * 10.0f);
 }
 
 void Hogra::ObserveObjectControl::DragPlane(float delta) {

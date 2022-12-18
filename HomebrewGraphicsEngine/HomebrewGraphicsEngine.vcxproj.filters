@@ -52,9 +52,6 @@
     <Filter Include="Header Files\Model\UserControls">
       <UniqueIdentifier>{8d84df0f-8d14-4c96-a678-1f97e8f05aba}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Model\Lighting">
-      <UniqueIdentifier>{0f6ba421-ec2c-4c51-9c3e-fccf30ce7c43}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Model\Animations">
       <UniqueIdentifier>{37fabc3f-7254-41d9-afdf-8382bc164645}</UniqueIdentifier>
     </Filter>
@@ -63,6 +60,9 @@
     </Filter>
     <Filter Include="Header Files\volumetric">
       <UniqueIdentifier>{e34f44c3-a9a5-40b6-9cc0-57ac28052bce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Model\Lighting">
+      <UniqueIdentifier>{0f6ba421-ec2c-4c51-9c3e-fccf30ce7c43}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -586,6 +586,9 @@
     </ClInclude>
     <ClInclude Include="volumetric\VolumeObject.h">
       <Filter>Header Files\volumetric</Filter>
+    </ClInclude>
+    <ClInclude Include="HograExceptions.h">
+      <Filter>Header Files\Model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

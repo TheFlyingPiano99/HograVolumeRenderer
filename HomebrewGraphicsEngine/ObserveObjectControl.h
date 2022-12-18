@@ -33,6 +33,7 @@ namespace Hogra {
 
         void releasePlane(float x, float y);
 
+        void pickVoxel(float x, float y);
 
         void SetVolumeObject(Volumetric::VolumeObject& _volumeObject) {
             volumeObject = &_volumeObject;
@@ -55,7 +56,7 @@ namespace Hogra {
         Volumetric::VolumeObject* volumeObject = nullptr;
         float rotationSpeed = 0.1f;
         float zoomSpeed = 4.0f;
-        bool isPlaneGrabbed = false;
+        bool isCropMode = false;
         glm::vec3 planeNormal;
         glm::vec3 planePosition;
         AABBCollider* collider = nullptr;

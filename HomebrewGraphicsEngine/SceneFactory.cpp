@@ -35,6 +35,7 @@ namespace Hogra {
 	}
 	
 	static bool isCrop = false;
+	static bool isPick = false;
 	Scene* SceneFactory::CreateVoxelDemoScene(int contextWidth, int contextHeight, int argc, char* argv[])
 	{
 
@@ -130,8 +131,25 @@ namespace Hogra {
 		{
 			auto* rotateCam = Allocator::New<AxisMoveAction>();
 			rotateCam->SetAction(
-				[scene](const glm::vec2& pixDelta, const glm::vec2& pixPos) {
+				[scene, volumeObject](const glm::vec2& pixDelta, const glm::vec2& pixPos) {
 					scene->GetUserControl()->Rotate(-pixDelta);
+					if (isPick) {
+						double x;
+						double y;
+						glfwGetCursorPos(GlobalVariables::window, &x, &y);
+						float ndc_x = x / (double)GlobalVariables::windowWidth * 2.0 - 1.0;
+						float ndc_y = 1.0 - y / (double)GlobalVariables::windowHeight * 2.0;
+
+						glm::vec4 ndc = glm::vec4(ndc_x, ndc_y, 0, 1);
+						glm::vec4 wDir = scene->GetCamera().GetRayDirMatrix() * glm::vec4(x, y, 0.0, 1.0f);
+						wDir /= wDir.w;
+						glm::vec3 dir = glm::normalize(glm::vec3(wDir));
+						Ray ray;
+						ray.SetPosition(scene->GetCamera().GetPosition());
+						ray.setDirection(dir);
+
+						volumeObject->setVoxelPickerPosition(ray.GetPosition() + ray.getDirection() * 10.0f);
+					}
 				}
 			);
 			ControlActionManager::getInstance()->RegisterMouseMoveAction(rotateCam);
@@ -183,6 +201,28 @@ namespace Hogra {
 					ControlActionManager::getInstance()->RegisterKeyAction(disableCrop);
 				}
 
+				{
+					auto* enablePick = Allocator::New<ButtonKeyAction>();
+					enablePick->Init(GLFW_KEY_P, ButtonKeyAction::TriggerType::triggerOnPress);
+					enablePick->SetAction(
+						[control, volumeObject]() {
+							isPick = true;
+							volumeObject->setVoxelPickMode(true);
+						}
+					);
+					ControlActionManager::getInstance()->RegisterKeyAction(enablePick);
+					
+					auto* disablePick = Allocator::New<ButtonKeyAction>();
+					disablePick->Init(GLFW_KEY_P, ButtonKeyAction::TriggerType::triggerOnRelease);
+					disablePick->SetAction(
+						[control, volumeObject]() {
+							isPick = false;
+							volumeObject->setVoxelPickMode(false);
+						}
+					);
+					ControlActionManager::getInstance()->RegisterKeyAction(disablePick);
+				}
+
 				auto* leftClick = Allocator::New<ButtonKeyAction>();
 				leftClick->Init(GLFW_MOUSE_BUTTON_LEFT, ButtonKeyAction::TriggerType::triggerContinuosly);
 				leftClick->SetAction(
@@ -193,11 +233,15 @@ namespace Hogra {
 						float ndc_x = x / (double)GlobalVariables::windowWidth * 2.0 - 1.0;
 						float ndc_y = 1.0 - y / (double)GlobalVariables::windowHeight * 2.0;
 
-						if (!isCrop) {
+						if (!isCrop && !isPick) {
 							bool isSuccess = volumeObject->SelectTransferFunctionRegion(ndc_x, ndc_y);
 						}
-						else {
+						else if (isCrop) {
 							control->grabPlane(ndc_x, ndc_y);
+						}
+
+						if (isPick) {
+							control->pickVoxel(ndc_x, ndc_y);
 						}
 					}
 				);
