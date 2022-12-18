@@ -368,7 +368,7 @@ namespace Hogra::Volumetric {
 	private:
 
 		const char* transferRegionSelectModes[TRANSFER_MODE_COUNT] = { "Flood fill", "General area", "Select class", "Remove class", "Intensity band" };
-		const char* currentTransferRegionSelectMode = "Select class";
+		const char* currentTransferRegionSelectMode = "General area";
 
 		struct BoxEdge {
 			glm::vec3 position;
@@ -422,6 +422,7 @@ namespace Hogra::Volumetric {
 		glm::vec3 wVoxelPickerPos;
 		bool isCropMode = false;
 		bool isVoxelPickMode = false;
+		bool prevWasVoxelPickMode = false;
 
 		BoundingGeometry boundingGeometry;	// Optimised box grid
 		glm::vec3 w_position;

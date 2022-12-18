@@ -54,13 +54,16 @@ namespace Hogra::Volumetric {
 		glm::ivec2 iMin = glm::ivec2(dim.x * min.x, dim.y * min.y);
 		glm::ivec2 iMax = glm::ivec2(dim.x * max.x, dim.y * max.y);
 		glm::vec2 center = (min + max) / 2.0f;
+		glm::vec2 size = max - min;
 		glm::ivec2 iCenter = glm::ivec2(dim.x * center.x, dim.y * center.y);
 		std::vector<glm::vec4> bytes(dim.x * dim.y);
-		float radius = (max.x - min.x) / 2.0f;
 		for (int y = 0; y < dim.y; y++) {
 			for (int x = 0; x < dim.x; x++) {
 				if (x >= iMin.x && x <= iMax.x && y >= iMin.y && y <= iMax.y) {
-					auto c = color * (1.0f - glm::length(glm::vec2(center) - glm::vec2(x, y) / glm::vec2(dim.x, dim.y)) / radius);
+					auto dist = center - glm::vec2(x, y) / glm::vec2(dim.x, dim.y);
+					dist.x = fabsf(dist.x);
+					dist.y = fabsf(dist.y);
+					auto c = color * (1.0f - length(dist / size) * 2.0f);
 					c.r = (c.r > 1.0) ? 1.0 : c.r;
 					c.r = (c.r < 0.0) ? 0.0 : c.r;
 					c.g = (c.g > 1.0) ? 1.0 : c.g;

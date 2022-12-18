@@ -33,7 +33,7 @@ namespace Hogra {
 
         void releasePlane(float x, float y);
 
-        void pickVoxel(float x, float y);
+        void pickVoxel(float x, float y, float distance);
 
         void SetVolumeObject(Volumetric::VolumeObject& _volumeObject) {
             volumeObject = &_volumeObject;

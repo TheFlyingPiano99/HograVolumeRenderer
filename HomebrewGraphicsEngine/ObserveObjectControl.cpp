@@ -73,20 +73,21 @@ void Hogra::ObserveObjectControl::grabPlane(float x, float y) {
 
 void Hogra::ObserveObjectControl::releasePlane(float x, float y) {
 	isCropMode = false;
-
 }
 
-void Hogra::ObserveObjectControl::pickVoxel(float x, float y)
+void Hogra::ObserveObjectControl::pickVoxel(float x, float y, float distance)
 {
 	glm::vec4 ndc = glm::vec4(x, y, 0, 1);
-	glm::vec4 wDir = camera->GetRayDirMatrix() * glm::vec4(x, y, 0.0, 1.0f);
+	glm::vec4 wDir = camera->GetRayDirMatrix() * ndc;
 	wDir /= wDir.w;
 	glm::vec3 dir = glm::normalize(glm::vec3(wDir));
 	Ray ray;
 	ray.SetPosition(camera->GetPosition());
 	ray.setDirection(dir);
+	auto pos = ray.GetPosition() + ray.getDirection() * distance;
+	std::cout << "x: " << pos.x << " y: " << pos.y << " z: " << pos.z << " - click" << std::endl;
 
-	volumeObject->pickVoxel(ray.GetPosition() + ray.getDirection() * 10.0f);
+	volumeObject->pickVoxel(pos);
 }
 
 void Hogra::ObserveObjectControl::DragPlane(float delta) {

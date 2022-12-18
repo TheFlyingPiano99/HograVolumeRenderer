@@ -36,6 +36,8 @@ namespace Hogra {
 	
 	static bool isCrop = false;
 	static bool isPick = false;
+	static float pickDistance = 10.0f;
+
 	Scene* SceneFactory::CreateVoxelDemoScene(int contextWidth, int contextHeight, int argc, char* argv[])
 	{
 
@@ -131,24 +133,26 @@ namespace Hogra {
 		{
 			auto* rotateCam = Allocator::New<AxisMoveAction>();
 			rotateCam->SetAction(
-				[scene, volumeObject](const glm::vec2& pixDelta, const glm::vec2& pixPos) {
-					scene->GetUserControl()->Rotate(-pixDelta);
+				[scene, volumeObject, rotateCam](const glm::vec2& pixDelta, const glm::vec2& pixPos) {
 					if (isPick) {
 						double x;
 						double y;
 						glfwGetCursorPos(GlobalVariables::window, &x, &y);
 						float ndc_x = x / (double)GlobalVariables::windowWidth * 2.0 - 1.0;
 						float ndc_y = 1.0 - y / (double)GlobalVariables::windowHeight * 2.0;
-
 						glm::vec4 ndc = glm::vec4(ndc_x, ndc_y, 0, 1);
-						glm::vec4 wDir = scene->GetCamera().GetRayDirMatrix() * glm::vec4(x, y, 0.0, 1.0f);
+						glm::vec4 wDir = scene->GetCamera().GetRayDirMatrix() * ndc;
 						wDir /= wDir.w;
 						glm::vec3 dir = glm::normalize(glm::vec3(wDir));
 						Ray ray;
 						ray.SetPosition(scene->GetCamera().GetPosition());
 						ray.setDirection(dir);
-
-						volumeObject->setVoxelPickerPosition(ray.GetPosition() + ray.getDirection() * 10.0f);
+						auto pos = ray.GetPosition() + ray.getDirection() * pickDistance;
+						std::cout << "x: " << pos.x << " y: " << pos.y << " z: " << pos.z << std::endl;
+						volumeObject->setVoxelPickerPosition(pos);
+					}
+					else {
+						scene->GetUserControl()->Rotate(-pixDelta);
 					}
 				}
 			);
@@ -174,8 +178,32 @@ namespace Hogra {
 
 				auto* zoomCam = Allocator::New<AxisMoveAction>();
 				zoomCam->SetAction(
-					[scene](const glm::vec2& pixDelta, const glm::vec2& pixPos) {
-						scene->GetUserControl()->Zoom(pixPos.y);
+					[scene, volumeObject](const glm::vec2& pixDelta, const glm::vec2& pixPos) {
+						if (isPick) {
+							pickDistance += pixPos.y * 0.1f;
+							if (pickDistance < 1.0f) {
+								pickDistance = 1.0f;
+							}
+							double x;
+							double y;
+							glfwGetCursorPos(GlobalVariables::window, &x, &y);
+							float ndc_x = x / (double)GlobalVariables::windowWidth * 2.0 - 1.0;
+							float ndc_y = 1.0 - y / (double)GlobalVariables::windowHeight * 2.0;
+							glm::vec4 ndc = glm::vec4(ndc_x, ndc_y, 0, 1);
+							glm::vec4 wDir = scene->GetCamera().GetRayDirMatrix() * ndc;
+							wDir /= wDir.w;
+							glm::vec3 dir = glm::normalize(glm::vec3(wDir));
+							Ray ray;
+							ray.SetPosition(scene->GetCamera().GetPosition());
+							ray.setDirection(dir);
+							auto pos = ray.GetPosition() + ray.getDirection() * pickDistance;
+							std::cout << "x: " << pos.x << " y: " << pos.y << " z: " << pos.z << std::endl;
+							volumeObject->setVoxelPickerPosition(pos);
+						}
+						else {
+							scene->GetUserControl()->Zoom(pixPos.y);
+						}
+
 					}
 				);
 				ControlActionManager::getInstance()->RegisterMouseScrollAction(zoomCam);
@@ -241,7 +269,7 @@ namespace Hogra {
 						}
 
 						if (isPick) {
-							control->pickVoxel(ndc_x, ndc_y);
+							control->pickVoxel(ndc_x, ndc_y, pickDistance);
 						}
 					}
 				);

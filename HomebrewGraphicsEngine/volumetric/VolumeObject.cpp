@@ -103,6 +103,16 @@ namespace Hogra::Volumetric {
 
 	void VolumeObject::Draw(FBO& outFBO, const Texture2D& depthTexture, const Camera& camera)
 	{
+		if (isVoxelPickMode) {
+			DrawVoxelPicker();
+			isChanged = true;
+			prevWasVoxelPickMode = true;
+		}
+		else if (prevWasVoxelPickMode) {
+			prevWasVoxelPickMode = false;
+			isChanged = true;
+		}
+
 		if (useHalfAngleSlicing) {
 			HalfAngleSlicing(camera, depthTexture);
 		}
@@ -121,9 +131,6 @@ namespace Hogra::Volumetric {
 		
 		if (isCropMode) {
 			DrawBoundingBox();
-		}
-		if (isVoxelPickMode) {
-			DrawVoxelPicker();
 		}
 
 		transferFunction.Draw(outFBO);
@@ -650,8 +657,9 @@ namespace Hogra::Volumetric {
 		auto program = voxelPickerMesh.getMaterial()->GetShaderProgram();
 		auto mMatrix = glm::translate(wVoxelPickerPos);
 		program->SetUniform("sceneObject.modelMatrix", mMatrix);
+		glLineWidth(3);
 		voxelPickerMesh.Draw();
-
+		glLineWidth(1);
 	}
 
 	void VolumeObject::Serialize() {
@@ -738,6 +746,7 @@ namespace Hogra::Volumetric {
 		std::vector<GLuint> indices;
 		Vertex v;
 		constexpr float l = 5.0f;
+		constexpr float d = 50.0f;
 		v.position = glm::vec3(0,0,0) * l;
 		vertices.push_back(v);
 		v.position = glm::vec3(-1, 0, 0) * l;
@@ -752,34 +761,73 @@ namespace Hogra::Volumetric {
 		vertices.push_back(v);
 		v.position = glm::vec3(0, 0, 1) * l;
 		vertices.push_back(v);
+		v.position = glm::vec3(-1, 0, 0) * l / d;
+		vertices.push_back(v);
+		v.position = glm::vec3(1, 0, 0) * l / d;
+		vertices.push_back(v);
+		v.position = glm::vec3(0, -1, 0) * l / d;
+		vertices.push_back(v);
+		v.position = glm::vec3(0, 1, 0) * l / d;
+		vertices.push_back(v);
+		v.position = glm::vec3(0, 0, -1) * l / d;
+		vertices.push_back(v);
+		v.position = glm::vec3(0, 0, 1) * l / d;
+		vertices.push_back(v);
 		
 		indices.push_back(1);
-		indices.push_back(0);
-		indices.push_back(0);
+		indices.push_back(7);
+		indices.push_back(8);
 		indices.push_back(2);
 
 		indices.push_back(3);
-		indices.push_back(0);
-		indices.push_back(0);
+		indices.push_back(9);
+		indices.push_back(10);
 		indices.push_back(4);
 
 		indices.push_back(5);
-		indices.push_back(0);
-		indices.push_back(0);
+		indices.push_back(11);
+		indices.push_back(12);
 		indices.push_back(6);
+
+		indices.push_back(7);
+		indices.push_back(9);
+		indices.push_back(9);
+		indices.push_back(8);
+		indices.push_back(8);
+		indices.push_back(10);
+		indices.push_back(10);
+		indices.push_back(7);
+
+		indices.push_back(7);
+		indices.push_back(11);
+		indices.push_back(11);
+		indices.push_back(8);
+		indices.push_back(8);
+		indices.push_back(12);
+		indices.push_back(12);
+		indices.push_back(7);
+
+		indices.push_back(9);
+		indices.push_back(11);
+		indices.push_back(11);
+		indices.push_back(10);
+		indices.push_back(10);
+		indices.push_back(12);
+		indices.push_back(12);
+		indices.push_back(9);
 
 		auto geometry = Allocator::New<Geometry>();
 		geometry->Init(vertices, indices);
 		geometry->SetFaceCulling(false);
 		geometry->SetPrimitiveType(GL_LINES);
 		auto program = Allocator::New<ShaderProgram>();
-		program->Init(AssetFolderPathManager::getInstance()->getShaderFolderPath().append("boundingBox.vert"),
+		program->Init(AssetFolderPathManager::getInstance()->getShaderFolderPath().append("voxelPicker.vert"),
 			"",
-			AssetFolderPathManager::getInstance()->getShaderFolderPath().append("boundingBox.frag"));
+			AssetFolderPathManager::getInstance()->getShaderFolderPath().append("voxelPicker.frag"));
 		auto material = Allocator::New<Material>();
 		material->Init(program);
 		voxelPickerMesh.Init(material, geometry);
-		voxelPickerMesh.setDepthTest(false);
+		voxelPickerMesh.setDepthTest(true);
 	}
 
 	void VolumeObject::RemoveFeatureFromGroup(Feature* feature) {
@@ -831,12 +879,24 @@ namespace Hogra::Volumetric {
 
 	void VolumeObject::pickVoxel(const glm::vec3& wPos)
 	{
+		setVoxelPickerPosition(wPos);
 		try {
 			auto voxelPos = getVoxelCoords(wPos);
-			auto gradientAndIntensity = voxels->ResampleGradientAndDensity(voxelPos);
-			float g = length(glm::vec3(gradientAndIntensity));
-			float i = gradientAndIntensity.w;
-			transferFunction.generalArea(glm::vec2(i, g) - glm::vec2(0.01f), glm::vec2(i, g) + glm::vec2(0.01f), transferDrawColor);
+			float g = 0;
+			float i = 0;
+			for (int j = 0; j < 3; j++) {
+				for (int k = 0; k < 3; k++) {
+					for (int l = 0; l < 3; l++) {
+						auto gradientAndIntensity = glm::vec4(0.0f);
+						gradientAndIntensity = voxels->ResampleGradientAndDensity(voxelPos + glm::ivec3(j - 1, k - 1, l - 1));
+						g += length(glm::vec3(gradientAndIntensity));
+						i += gradientAndIntensity.w;
+					}
+				}
+			}
+			g /= 27.0f;
+			i /= 27.0f;
+			transferFunction.generalArea(glm::vec2(i, g) - glm::vec2(0.02f, 0.5f), glm::vec2(i, g) + glm::vec2(0.02f, 0.5f), transferDrawColor);
 			isChanged = true;
 		}
 		catch (OutOfBoundException _) {

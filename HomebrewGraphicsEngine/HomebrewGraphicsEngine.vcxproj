@@ -383,6 +383,8 @@
     <None Include="..\Resources\Shaders\voxelAttenuationCheap.frag" />
     <None Include="..\Resources\Shaders\voxelColor.frag" />
     <None Include="..\Resources\Shaders\voxelColorCheap.frag" />
+    <None Include="..\Resources\Shaders\voxelPicker.frag" />
+    <None Include="..\Resources\Shaders\voxelPicker.vert" />
     <None Include="..\Resources\Shaders\voxelRayCast.frag" />
     <None Include="ClassDiagram.cd" />
     <None Include="imgui.ini" />
