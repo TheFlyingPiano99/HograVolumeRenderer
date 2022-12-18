@@ -95,6 +95,7 @@ namespace Hogra {
 		posConnector->Init(volumeLight);
 		bulbSprite->SetPositionConnector(posConnector);
 		scene->AddSceneObject(bulbSprite, "bulbSprite", "ForwardLayer");
+
 		auto* camPosProvider = Allocator::New<PositionConnector>();
 		camPosProvider->Init(&(scene->GetCamera()), glm::vec3(5,1,0));
 		//volumeLight->SetPositionProvider(camPosProvider);
