@@ -230,6 +230,30 @@ namespace Hogra {
 				}
 
 				{
+					auto* cropOut = Allocator::New<ButtonKeyAction>();
+					cropOut->Init(GLFW_KEY_Z, ButtonKeyAction::TriggerType::triggerContinuosly);
+					cropOut->SetAction(
+						[control]() {
+							if (isCrop) {
+								control->DragPlane(0.01f);
+							}
+						}
+					);
+					ControlActionManager::getInstance()->RegisterKeyAction(cropOut);
+
+					auto* cropIn = Allocator::New<ButtonKeyAction>();
+					cropIn->Init(GLFW_KEY_X, ButtonKeyAction::TriggerType::triggerContinuosly);
+					cropIn->SetAction(
+						[control]() {
+							if (isCrop) {
+								control->DragPlane(-0.01f);
+							}
+						}
+					);
+					ControlActionManager::getInstance()->RegisterKeyAction(cropIn);
+				}
+
+				{
 					auto* enablePick = Allocator::New<ButtonKeyAction>();
 					enablePick->Init(GLFW_KEY_P, ButtonKeyAction::TriggerType::triggerOnPress);
 					enablePick->SetAction(

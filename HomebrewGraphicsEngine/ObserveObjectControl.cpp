@@ -1,5 +1,7 @@
 #include "ObserveObjectControl.h"
 
+#define CROP_SLIDE_SPEED 0.1f
+
 Hogra::ObserveObjectControl::ObserveObjectControl() : rotationSpeed(0.01f), zoomSpeed(0.1f) {
 	GlobalVariables::hideCursor = false;
 }
@@ -12,7 +14,7 @@ void Hogra::ObserveObjectControl::Rotate(const glm::vec2& delta)
 	if (isCropMode) {
 		glm::vec3 w_d = (-camera->getRight() * delta.x + camera->getUp() * delta.y) / length(planePosition - camera->GetPosition());
 		float d = glm::dot(planeNormal, w_d);
-		DragPlane(d);
+		DragPlane(d * CROP_SLIDE_SPEED);
 		return;
 	}
 	if (!GlobalVariables::hideCursor) {

@@ -17,6 +17,8 @@ namespace Hogra {
 
         void Rotate(const glm::vec2& delta) override;
 
+        void Crop(float d);
+
         void SetCamera(Camera& _camera) {
             camera = &_camera;
         }
@@ -47,9 +49,9 @@ namespace Hogra {
             this->collider = _collider;
         }
 
-    private:
-
         void DragPlane(float delta);
+
+    private:
 
         Scene* scene = nullptr;
         Camera* camera = nullptr;
